@@ -99,6 +99,7 @@ def renew_comb(comb: list[str], auth_folder: str = "./.auth") -> None:
         page.get_by_test_id("password-field").fill(password)
         page.get_by_test_id("sign-in-button").click()
 
+    print(f"{auth_folder}/{'.'.join(comb)}_state.json")
     context.storage_state(path=f"{auth_folder}/{'.'.join(comb)}_state.json")
 
     context_manager.__exit__()
@@ -112,21 +113,23 @@ def get_site_comb_from_filepath(file_path: str) -> list[str]:
 def main(auth_folder: str = "./.auth") -> None:
     pairs = list(combinations(SITES, 2))
 
+    print(f"Renewing cookies for {auth_folder}")
     max_workers = 8
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for pair in pairs:
-            # TODO[shuyanzh] auth don't work on these two sites
-            if "reddit" in pair and (
-                "shopping" in pair or "shopping_admin" in pair
-            ):
-                continue
-            executor.submit(
-                renew_comb, list(sorted(pair)), auth_folder=auth_folder
-            )
+        # for pair in pairs:
+        #     # TODO[shuyanzh] auth don't work on these two sites
+        #     if "reddit" in pair and (
+        #         "shopping" in pair or "shopping_admin" in pair
+        #     ):
+        #         continue
+        #     executor.submit(
+        #         renew_comb, list(sorted(pair)), auth_folder=auth_folder
+        #     )
 
         for site in SITES:
             executor.submit(renew_comb, [site], auth_folder=auth_folder)
 
+    print(f"Checking {auth_folder} for expired cookies")
     futures = []
     cookie_files = list(glob.glob(f"{auth_folder}/*.json"))
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
